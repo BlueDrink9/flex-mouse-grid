@@ -323,6 +323,11 @@ class FlexMouseGrid:
         self.info_showing = False
         self.redraw()
 
+        # Close the canvas when deactivating
+        if self.mcanvas is not None:
+            self.mcanvas.close()
+            self.mcanvas = None
+
         self.input_so_far = ""
 
     def redraw(self):
@@ -1227,7 +1232,12 @@ class FlexMouseGrid:
 
 
 mg = FlexMouseGrid()
-app.register("ready", mg.setup)
+# Initialize and then immediately deactivate to close the canvas
+def init_and_deactivate():
+    mg.setup()
+    mg.deactivate()
+
+app.register("ready", init_and_deactivate)
 
 
 @mod.action_class
