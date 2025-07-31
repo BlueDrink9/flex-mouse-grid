@@ -159,8 +159,9 @@ class FlexMouseGrid:
         self.input_so_far = ""
         self.letters = string.ascii_lowercase
         self.morph = []
+        self.__reset_visibility_flags()
 
-        # visibility flags
+    def __reset_visibility_flags(self):
         self.grid_showing = False
         self.rulers_showing = False
         self.points_showing = False
@@ -208,11 +209,7 @@ class FlexMouseGrid:
         self.selected_superblock = 0
         self.input_so_far = ""
 
-        # visibility flags
-        self.grid_showing = False
-        self.rulers_showing = False
-        self.points_showing = False
-        self.boxes_showing = False
+        self.__reset_visibility_flags()
 
         # points
         self.points_map_store = FlexStore("points", lambda: {})
@@ -316,11 +313,7 @@ class FlexMouseGrid:
         self.redraw()
 
     def deactivate(self):
-        self.points_showing = False
-        self.boxes_showing = False
-        self.boxes_threshold_view_showing = False
-        self.grid_showing = False
-        self.info_showing = False
+        self.__reset_visibility_flags()
         self.redraw()
 
         # Close the canvas when deactivating
