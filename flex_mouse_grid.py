@@ -332,6 +332,12 @@ class FlexMouseGrid:
         else:
             self.__create_canvas(self.screen)
 
+    def _make_blockrect(self, col, row, size):
+        rect = Rect(col * size, row * size, size, size)
+        rect.right = min(rect.right, self.rect.width)
+        rect.bot = min(rect.bot, self.rect.height)
+        return rect
+
     def draw(self, canvas):
         # for other-screen or individual-window grids
         canvas.translate(self.rect.x, self.rect.y)
@@ -362,20 +368,14 @@ class FlexMouseGrid:
 
             for row in range(0, int(self.rect.height) // superblock_size + 1):
                 for col in range(0, int(self.rect.width) // superblock_size + 1):
+                    blockrect = self._make_blockrect(col, row, superblock_size)
+
                     canvas.paint.color = colors[(row + col) % len(colors)] + hx(
                         self.bg_transparency
                     )
 
                     # canvas.paint.color = "ffffff"
                     canvas.paint.style = Paint.Style.FILL
-                    blockrect = Rect(
-                        col * superblock_size,
-                        row * superblock_size,
-                        superblock_size,
-                        superblock_size,
-                    )
-                    blockrect.right = min(blockrect.right, self.rect.width)
-                    blockrect.bot = min(blockrect.bot, self.rect.height)
                     canvas.draw_rect(blockrect)
 
                     if skipped_superblock != num:
@@ -387,14 +387,6 @@ class FlexMouseGrid:
                             "user.flex_mouse_grid_superblock_background_color"
                         ) + hx(self.bg_transparency)
                         canvas.paint.style = Paint.Style.FILL
-                        blockrect = Rect(
-                            col * superblock_size,
-                            row * superblock_size,
-                            superblock_size,
-                            superblock_size,
-                        )
-                        blockrect.right = min(blockrect.right, self.rect.width)
-                        blockrect.bot = min(blockrect.bot, self.rect.height)
                         canvas.draw_rect(blockrect)
 
                         canvas.paint.color = settings.get(
@@ -402,14 +394,6 @@ class FlexMouseGrid:
                         ) + hx(self.bg_transparency)
                         canvas.paint.style = Paint.Style.STROKE
                         canvas.paint.stroke_width = 5
-                        blockrect = Rect(
-                            col * superblock_size,
-                            row * superblock_size,
-                            superblock_size,
-                            superblock_size,
-                        )
-                        blockrect.right = min(blockrect.right, self.rect.width)
-                        blockrect.bot = min(blockrect.bot, self.rect.height)
                         canvas.draw_rect(blockrect)
 
                         # drawing the big number in the background
