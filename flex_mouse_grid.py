@@ -169,6 +169,13 @@ class FlexMouseGrid:
         self.boxes_threshold_view_showing = False
         self.info_showing = False
 
+    def __create_canvas(self, screen):
+        if self.mcanvas is not None:
+            self.mcanvas.close()
+        self.mcanvas = canvas.Canvas.from_screen(screen)
+        self.mcanvas.register("draw", self.draw)
+        self.mcanvas.freeze()
+
     def setup(self, *, rect: Rect = None, screen_index: int = -1):
 
         # configured via settings
@@ -249,11 +256,7 @@ class FlexMouseGrid:
         self.columns = int(self.rect.width // self.field_size)
         self.rows = int(self.rect.height // self.field_size)
 
-        if self.mcanvas is not None:
-            self.mcanvas.close()
-        self.mcanvas = canvas.Canvas.from_screen(screen)
-        self.mcanvas.register("draw", self.draw)
-        self.mcanvas.freeze()
+        self.__create_canvas(screen)
 
     def add_partial_input(self, letter: str):
         # this logic changes which superblock is selected
@@ -326,6 +329,8 @@ class FlexMouseGrid:
     def redraw(self):
         if self.mcanvas:
             self.mcanvas.freeze()
+        else:
+            self.__create_canvas(self.screen)
 
     def draw(self, canvas):
         # for other-screen or individual-window grids
