@@ -462,98 +462,73 @@ class FlexMouseGrid:
                     if not (skip_it):
                         draw_letters(row, col)
 
-        def draw_letters(row, col):
-            # get letters
-            # gets a letter from the alphabet of the form 'ab' or 'DA'
-            text_string = f"{self.letters[row % len(self.letters)]}{self.letters[col % len(self.letters)]}"
+        def _make_centered_bg_rect(text_string, col, row, row_index=0):
             # this the measure text is the box around the text.
             canvas.paint.textsize = int(self.field_size * 3 / 5)
             # canvas.paint.textsize = int(field_size*4/5)
             text_rect = canvas.paint.measure_text(text_string)[1]
-
             background_rect = text_rect.copy()
             background_rect.center = Point2d(
                 col * self.field_size + self.field_size / 2,
-                row * self.field_size + self.field_size / 2,
-            )
+                row * self.field_size
+                + (self.field_size / 2 + text_rect.height / 2)
+                * (row_index + 1),
+            )  # I think this re-centers the point?
             background_rect = background_rect.inset(-4)
+            return background_rect, text_rect
 
+        def _draw_colored_text_box(background_rect, text_rect, text_string, letter, index, col, row):
+            # check if someone has said a letter and highlight a row, or check if two
+            # letters have been said and highlight a column
+
+            # gets a letter from the alphabet of the form 'ab' or 'DA'
+            text_string = f"{letter}"
+
+            background_rect, _ = _make_centered_bg_rect(text_string, col, row, row_index=index)
+
+            canvas.draw_rect(background_rect)
+            canvas.paint.color = settings.get(
+                "user.flex_mouse_grid_small_letters_color"
+            ) + hx(self.label_transparency)
+            # paint.style = Paint.Style.STROKE
+            canvas.draw_text(
+                text_string,
+                col * self.field_size + (self.field_size / 2),
+                row * self.field_size
+                + (self.field_size / 2 + text_rect.height / 2)
+                * (index + 1),
+            )
+        def draw_letters(row, col):
+            curr_row_letter = self.letters[row % len(self.letters)]
+            curr_col_letter = self.letters[col % len(self.letters)]
+            # gets a letter from the alphabet of the form 'ab' or 'DA'
+            text_string = f"{curr_row_letter}{curr_col_letter}"
             # remove distracting letters from frame mode frames.
             if self.pattern == "frame":
-                if self.letters[row % len(self.letters)] == "a":
-                    # gets a letter from the alphabet of the form 'ab' or 'DA'
-                    text_string = f"{self.letters[col % len(self.letters)]}"
-                    # this the measure text is the box around the text.
-                    canvas.paint.textsize = int(self.field_size * 3 / 5)
-                    # canvas.paint.textsize = int(field_size*4/5)
-                    text_rect = canvas.paint.measure_text(text_string)[
-                        1
-                    ]  # find out how many characters long the text is?
-                    background_rect = text_rect.copy()
-                    background_rect.center = Point2d(
-                        col * self.field_size + self.field_size / 2,
-                        row * self.field_size + self.field_size / 2,
-                    )  # I think this re-centers the point?
-                    background_rect = background_rect.inset(-4)
-                elif self.letters[col % len(self.letters)] == "a":
-                    text_string = f"{self.letters[row % len(self.letters)]}"
-
-                    canvas.paint.textsize = int(self.field_size * 3 / 5)
-                    # canvas.paint.textsize = int(field_size*4/5)
-                    text_rect = canvas.paint.measure_text(text_string)[
-                        1
-                    ]  # find out how many characters long the text is?
-
-                    background_rect = text_rect.copy()
-                    background_rect.center = Point2d(
-                        col * self.field_size + self.field_size / 2,
-                        row * self.field_size + self.field_size / 2,
-                    )  # I think this re-centers the point?
-                    background_rect = background_rect.inset(-4)
-
+                if curr_row_letter == "a":
+                    text_string = f"{curr_col_letter}"
+                elif curr_col_letter == "a":
+                    text_string = f"{curr_row_letter}"
             elif self.pattern == "phonetic":
-                if self.letters[row % len(self.letters)] == "a":
-                    # gets a letter from the alphabet of the form 'ab' or 'DA'
-                    text_string = f"{self.letters[col % len(self.letters)]}"
-                    # this the measure text is the box around the text.
-                    canvas.paint.textsize = int(self.field_size * 3 / 5)
-                    # canvas.paint.textsize = int(field_size*4/5)
-                    text_rect = canvas.paint.measure_text(text_string)[
-                        1
-                    ]  # find out how many characters long the text is?
-                    background_rect = text_rect.copy()
-                    background_rect.center = Point2d(
-                        col * self.field_size + self.field_size / 2,
-                        row * self.field_size + self.field_size / 2,
-                    )  # I think this re-centers the point?
-                    background_rect = background_rect.inset(-4)
-                elif self.letters[col % len(self.letters)] == "a":
+                if curr_row_letter == "a":
+                    text_string = f"{curr_col_letter}"
+                elif curr_col_letter == "a":
                     # gets the phonetic words currently being used
                     text_string = f"{list(registry.lists['user.letter'][0].keys())[row%len(self.letters)]}"
+            background_rect, text_rect = _make_centered_bg_rect(text_string, col, row)
 
-                    canvas.paint.textsize = int(self.field_size * 3 / 5)
-                    # canvas.paint.textsize = int(field_size*4/5)
-                    text_rect = canvas.paint.measure_text(text_string)[
-                        1
-                    ]  # find out how many characters long the text is?
-
-                    background_rect = text_rect.copy()
-                    background_rect.center = Point2d(
-                        col * self.field_size + self.field_size / 2,
-                        row * self.field_size + self.field_size / 2,
-                    )  # I think this re-centers the point?
-                    background_rect = background_rect.inset(-4)
-
-            if not (
-                self.input_so_far.startswith(self.letters[row % len(self.letters)])
+            at_position = (
+                self.input_so_far.startswith(curr_row_letter)
                 or len(self.input_so_far) > 1
-                and self.input_so_far.endswith(self.letters[col % len(self.letters)])
-            ):
+                and self.input_so_far.endswith(curr_col_letter)
+            )
+            if not at_position:
                 canvas.paint.color = settings.get(
                     "user.flex_mouse_grid_letters_background_color"
                 ) + hx(self.label_transparency)
                 canvas.paint.style = Paint.Style.FILL
                 canvas.draw_rect(background_rect)
+
                 canvas.paint.color = settings.get(
                     "user.flex_mouse_grid_small_letters_color"
                 ) + hx(self.label_transparency)
@@ -565,11 +540,7 @@ class FlexMouseGrid:
                 )
 
             # sees if the background should be highlighted
-            elif (
-                self.input_so_far.startswith(self.letters[row % len(self.letters)])
-                or len(self.input_so_far) > 1
-                and self.input_so_far.endswith(self.letters[col % len(self.letters)])
-            ):
+            else:
                 # draw columns of phonetic words
                 phonetic_word = list(registry.lists["user.letter"][0].keys())[
                     col % len(self.letters)
@@ -580,72 +551,13 @@ class FlexMouseGrid:
                         canvas.paint.color = settings.get(
                             "user.flex_mouse_grid_row_highlighter"
                         ) + hx(self.label_transparency)
-                        # check if someone has said a letter and highlight a row, or check if two
-                        # letters have been said and highlight a column
-
-                        # colors it the ordinary background.
-                        text_string = f"{letter}"  # gets a letter from the alphabet of the form 'ab' or 'DA'
-                        # this the measure text is the box around the text.
-                        canvas.paint.textsize = int(self.field_size * 3 / 5)
-                        # canvas.paint.textsize = int(field_size*4/5)
-                        text_rect = canvas.paint.measure_text(text_string)[
-                            1
-                        ]  # find out how many characters long the text is?
-
-                        background_rect = text_rect.copy()
-                        background_rect.center = Point2d(
-                            col * self.field_size + self.field_size / 2,
-                            row * self.field_size
-                            + (self.field_size / 2 + text_rect.height / 2)
-                            * (index + 1),
-                        )  # I think this re-centers the point?
-                        background_rect = background_rect.inset(-4)
-                        canvas.draw_rect(background_rect)
-                        canvas.paint.color = settings.get(
-                            "user.flex_mouse_grid_small_letters_color"
-                        ) + hx(self.label_transparency)
-                        # paint.style = Paint.Style.STROKE
-                        canvas.draw_text(
-                            text_string,
-                            col * self.field_size + (self.field_size / 2),
-                            row * self.field_size
-                            + (self.field_size / 2 + text_rect.height / 2)
-                            * (index + 1),
-                        )
+                        _draw_colored_text_box(background_rect, text_rect, text_string, letter, index, col, row)
 
                     elif self.pattern == "phonetic":
                         canvas.paint.color = settings.get(
                             "user.flex_mouse_grid_letters_background_color"
                         ) + hx(self.label_transparency)
-                        # gets a letter from the alphabet of the form 'ab' or 'DA'
-                        text_string = f"{letter}"
-                        # this the measure text is the box around the text.
-                        canvas.paint.textsize = int(self.field_size * 3 / 5)
-                        # canvas.paint.textsize = int(field_size*4/5)
-                        text_rect = canvas.paint.measure_text(text_string)[
-                            1
-                        ]  # find out how many characters long the text is?
-
-                        background_rect = text_rect.copy()
-                        background_rect.center = Point2d(
-                            col * self.field_size + self.field_size / 2,
-                            row * self.field_size
-                            + (self.field_size / 2 + text_rect.height / 2)
-                            * (index + 1),
-                        )  # I think this re-centers the point?
-                        background_rect = background_rect.inset(-4)
-                        canvas.draw_rect(background_rect)
-                        canvas.paint.color = settings.get(
-                            "user.flex_mouse_grid_small_letters_color"
-                        ) + hx(self.label_transparency)
-                        # paint.style = Paint.Style.STROKE
-                        canvas.draw_text(
-                            text_string,
-                            col * self.field_size + (self.field_size / 2),
-                            row * self.field_size
-                            + (self.field_size / 2 + text_rect.height / 2)
-                            * (index + 1),
-                        )
+                        self._draw_colored_text_box(background_rect, text_rect, text_string, letter, index, col, row)
 
         def draw_rulers():
             for x_pos, align in [
