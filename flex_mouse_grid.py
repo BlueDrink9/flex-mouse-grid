@@ -1146,6 +1146,9 @@ class FlexMouseGrid:
         print(process.stdout)
         print(process.stderr)
 
+        if process.returncode != 0:
+            print("Error running find_boxes.py:", process.stderr)
+            return
         process_output = json.loads(process.stdout)
         boxes = process_output["boxes"]
         window_rect = ui.active_window().rect
