@@ -345,6 +345,35 @@ class FlexMouseGrid:
             )
         )
 
+        def draw_superblock_bg(blockrect, num):
+            superblock_size = len(self.letters) * self.field_size
+            # attempt to change backround color on the superblock chosen
+
+            # canvas.paint.color = colors[(row + col) % len(colors)] + hx(self.bg_transparency)
+
+            # Background
+            canvas.paint.color = get_fg_setting("superblock_background_color") + hx(self.bg_transparency)
+            canvas.paint.style = Paint.Style.FILL
+            canvas.draw_rect(blockrect)
+
+            # Border
+            canvas.paint.color = get_fg_setting("superblock_stroke_color") + hx(self.bg_transparency)
+            canvas.paint.style = Paint.Style.STROKE
+            canvas.paint.stroke_width = 5
+            canvas.draw_rect(blockrect)
+
+            # drawing the big number in the background
+            canvas.paint.style = Paint.Style.FILL
+            canvas.paint.textsize = int(superblock_size)
+            text_rect = canvas.paint.measure_text(str(num))[1]
+            # text_rect.center = blockrect.center
+            text_rect.x = blockrect.x
+            text_rect.y = blockrect.y
+            canvas.paint.color = get_fg_setting("large_number_color") + hx(self.bg_transparency)
+            canvas.draw_text(
+                str(num), text_rect.x, text_rect.y + text_rect.height
+            )
+
         def draw_superblock():
             superblock_size = len(self.letters) * self.field_size
 
@@ -374,31 +403,7 @@ class FlexMouseGrid:
                     canvas.draw_rect(blockrect)
 
                     if skipped_superblock != num:
-                        # attempt to change backround color on the superblock chosen
-
-                        # canvas.paint.color = colors[(row + col) % len(colors)] + hx(self.bg_transparency)
-
-                        canvas.paint.color = get_fg_setting("superblock_background_color") + hx(self.bg_transparency)
-                        canvas.paint.style = Paint.Style.FILL
-                        canvas.draw_rect(blockrect)
-
-                        canvas.paint.color = get_fg_setting("superblock_stroke_color") + hx(self.bg_transparency)
-                        canvas.paint.style = Paint.Style.STROKE
-                        canvas.paint.stroke_width = 5
-                        canvas.draw_rect(blockrect)
-
-                        # drawing the big number in the background
-
-                        canvas.paint.style = Paint.Style.FILL
-                        canvas.paint.textsize = int(superblock_size)
-                        text_rect = canvas.paint.measure_text(str(num))[1]
-                        # text_rect.center = blockrect.center
-                        text_rect.x = blockrect.x
-                        text_rect.y = blockrect.y
-                        canvas.paint.color = get_fg_setting("large_number_color") + hx(self.bg_transparency)
-                        canvas.draw_text(
-                            str(num), text_rect.x, text_rect.y + text_rect.height
-                        )
+                        draw_superblock_bg(blockrect, num)
 
                     self.superblocks.append(blockrect.copy())
 
@@ -485,8 +490,6 @@ class FlexMouseGrid:
                 + (self.field_size / 2 + text_rect.height / 2)
                 * (index + 1),
             )
-        def _get_label_color_setting(self, setting):
-            settings.get(setting) + hx(self.label_transparency)
 
         def draw_letters(row, col):
             curr_row_letter = self.letters[row % len(self.letters)]
