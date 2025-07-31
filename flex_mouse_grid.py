@@ -152,6 +152,7 @@ def get_fg_setting(name):
 class FlexMouseGrid:
     def __init__(self):
         self.screen = None
+        # Rectangle that defines the area for the total canvas - e.g. the current screen or window
         self.rect: Rect = None
         self.history = []
         self.mcanvas = None
@@ -377,6 +378,7 @@ class FlexMouseGrid:
         def draw_superblock():
             superblock_size = len(self.letters) * self.field_size
 
+            # The current behavior is that each superblock has a different background color when it is active... pointless?
             colors = ["000055", "665566", "554444", "888855", "aa55aa", "55cccc"] * 100
             num = 1
 
@@ -384,29 +386,27 @@ class FlexMouseGrid:
 
             skipped_superblock = self.selected_superblock + 1
 
-            if (
-                int(self.rect.height) // superblock_size == 0
-                and int(self.rect.width) // superblock_size == 0
-            ):
+            blocks_fitting_in_canvas_y = int(self.rect.height) // superblock_size
+            blocks_fitting_in_canvas_x = int(self.rect.width) // superblock_size
+            if (blocks_fitting_in_canvas_y == 0 and blocks_fitting_in_canvas_x == 0):
                 skipped_superblock = 1
 
-            for row in range(0, int(self.rect.height) // superblock_size + 1):
-                for col in range(0, int(self.rect.width) // superblock_size + 1):
+            # Draw backgrounds for all except the current block
+            for row in range(0, blocks_fitting_in_canvas_y + 1):
+                for col in range(0, blocks_fitting_in_canvas_x + 1):
                     blockrect = self._make_blockrect(col, row, superblock_size)
 
-                    canvas.paint.color = colors[(row + col) % len(colors)] + hx(
-                        self.bg_transparency
-                    )
-
-                    # canvas.paint.color = "ffffff"
-                    canvas.paint.style = Paint.Style.FILL
-                    canvas.draw_rect(blockrect)
+                    # # Set up different 'empty' background colors for each 'current' superblock... pointless?
+                    # canvas.paint.color = colors[(row + col) % len(colors)] + hx(
+                    #     self.bg_transparency
+                    # )
+                    # # canvas.paint.color = "ffffff"
+                    # canvas.paint.style = Paint.Style.FILL
+                    # canvas.draw_rect(blockrect)
 
                     if skipped_superblock != num:
                         draw_superblock_bg(blockrect, num)
-
                     self.superblocks.append(blockrect.copy())
-
                     num += 1
 
         def draw_text():
@@ -419,9 +419,9 @@ class FlexMouseGrid:
             for row in range(0, self.rows + 1):
                 for col in range(0, self.columns + 1):
                     if self.pattern == "checkers":
-                        if (row % 2 == 0 and col % 2 == 0) or (
-                            row % 2 == 1 and col % 2 == 1
-                        ):
+                        even_row_col = row % 2 == 0 and col % 2 == 0
+                        odd_row_col = row % 2 == 1 and col % 2 == 1
+                        if even_row_col or odd_row_col:
                             skip_it = True
                         else:
                             skip_it = False
@@ -490,6 +490,7 @@ class FlexMouseGrid:
                 + (self.field_size / 2 + text_rect.height / 2)
                 * (index + 1),
             )
+
 
         def draw_letters(row, col):
             curr_row_letter = self.letters[row % len(self.letters)]
