@@ -346,6 +346,7 @@ class FlexMouseGrid:
                 self.rect.height + self.field_size * 4,
             )
         )
+        user_letter_words = list(registry.lists["user.letter"][0].keys())
 
         def draw_():
             if self.grid_showing:
@@ -462,7 +463,6 @@ class FlexMouseGrid:
         def draw_letters(row, col):
             curr_row_letter = self.letters[row % len(self.letters)]
             curr_col_letter = self.letters[col % len(self.letters)]
-            user_letter_words = list(registry.lists["user.letter"][0].keys())
             # gets a letter from the alphabet of the form 'ab' or 'DA'
             text_string = f"{curr_row_letter}{curr_col_letter}"
             # remove distracting letters from frame mode frames.
@@ -479,7 +479,9 @@ class FlexMouseGrid:
                     text_string = user_letter_words[row % len(self.letters)]
             background_rect, text_rect = _make_centered_bg_rect(text_string, col, row)
 
+            # check if someone has said a letter and highlight a row
             this_row_selected = self.input_so_far.startswith(curr_row_letter)
+
 
             if not this_row_selected: # Draw regular grid letters
                 # BG
@@ -497,27 +499,39 @@ class FlexMouseGrid:
 
             # sees if the background should be highlighted
             else:
-                # draw columns of phonetic words
+                # Draw this letter highlighted as part of the current row highlight
+                canvas.paint.color = (
+                    get_fg_setting("row_highlighter") + self.label_transparency_hx
+                )
                 phonetic_word = user_letter_words[col % len(self.letters)]
-                letter_list = list(phonetic_word)
-                for letter_index, letter_word in enumerate(letter_list):
-                    # Always highlight the currently selected row, then the rest of the phonetic letters can be normal
-                    bg_color = None
-                    if letter_index == 0:
-                        bg_color = "row_highlighter"
-                    elif self.pattern == "phonetic":
-                        bg_color = "letters_background_color"
-                    if bg_color:
-                        canvas.paint.color = get_fg_setting(bg_color) + self.label_transparency_hx
-                        _draw_colored_text_box(
-                            background_rect,
-                            text_rect,
-                            text_string,
-                            letter_word,
-                            letter_index,
-                            col,
-                            row,
-                        )
+                col_label_letter = phonetic_word[0] if self.pattern == "phonetic" else curr_col_letter
+                _draw_colored_text_box(
+                    text_rect,
+                    col_label_letter,
+                    col,
+                    row,
+                )
+                if self.pattern == "phonetic":
+                    draw_selected_row_phonetic_letter(text_rect, phonetic_word, col, row)
+
+        def draw_selected_row_phonetic_letter(text_rect, phonetic_word, col, row):
+            # Leave row highlight for first letter, but draw the rest of the phonetic letters normal
+            canvas.paint.color = (
+                get_fg_setting("row_highlighter") + self.label_transparency_hx
+            )
+            # draw columns of phonetic words
+            for letter_index, letter_word in enumerate(list(phonetic_word)):
+                _draw_colored_text_box(
+                    text_rect,
+                    letter_word,
+                    col,
+                    row,
+                    letter_index,
+                )
+                canvas.paint.color = (
+                    get_fg_setting("letters_background_color")
+                    + self.label_transparency_hx
+                )
 
         def col_field_center(col):
             return col * self.field_size + self.field_size / 2
@@ -544,21 +558,14 @@ class FlexMouseGrid:
             return background_rect, text_rect
 
         def _draw_colored_text_box(
-            background_rect, text_rect, text_string, letter, index, col, row
+            text_rect, letter, col, row, index=0
         ):
-            # check if someone has said a letter and highlight a row, or check if two
-            # letters have been said and highlight a column
-
-            # gets a letter from the alphabet of the form 'ab' or 'DA'
             text_string = f"{letter}"
-
             background_rect, _ = _make_centered_bg_rect(
                 text_string, col, row, row_letter_index=index
             )
-
             canvas.draw_rect(background_rect)
             canvas.paint.color = get_fg_setting("small_letters_color") + self.label_transparency_hx
-
             # paint.style = Paint.Style.STROKE
             canvas.draw_text(
                 text_string,
