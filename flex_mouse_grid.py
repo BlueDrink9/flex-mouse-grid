@@ -413,48 +413,45 @@ class FlexMouseGrid:
             canvas.paint.text_align = canvas.paint.TextAlign.CENTER
             canvas.paint.textsize = 17
             canvas.paint.typeface = get_fg_setting("font")
-
-            skip_it = False
-
             for row in range(0, self.rows + 1):
                 for col in range(0, self.columns + 1):
-                    if self.pattern == "checkers":
-                        even_row_col = row % 2 == 0 and col % 2 == 0
-                        odd_row_col = row % 2 == 1 and col % 2 == 1
-                        if even_row_col or odd_row_col:
-                            skip_it = True
-                        else:
-                            skip_it = False
-
-                    if self.pattern == "frame" or self.pattern == "phonetic":
-                        if (row % 26 == 0) or (col % 26 == 0):
-                            skip_it = False
-                        else:
-                            skip_it = True
-
-                    # draw the highlighter
-
-                    base_rect = self.superblocks[self.selected_superblock].copy()
-
-                    if (
-                        row >= (base_rect.y / self.field_size)
-                        and row <= (base_rect.y / self.field_size + len(self.letters))
-                        and col >= (base_rect.x / self.field_size)
-                        and col <= (base_rect.x / self.field_size + len(self.letters))
-                    ):
-                        within_selected_superblock = True
-
-                        if (
-                            within_selected_superblock
-                            and len(self.input_so_far) == 1
-                            and self.input_so_far.startswith(
-                                self.letters[row % len(self.letters)]
-                            )
-                        ):
-                            skip_it = False
-
-                    if not (skip_it):
+                    if should_draw_letter(col, row):
                         draw_letters(row, col)
+
+        def should_draw_letter(col, row):
+            curr_row_letter = self.letters[row % len(self.letters)]
+            skip_it = False
+            if self.pattern == "checkers":
+                even_row_col = row % 2 == 0 and col % 2 == 0
+                odd_row_col = row % 2 == 1 and col % 2 == 1
+                if even_row_col or odd_row_col:
+                    skip_it = True
+                else:
+                    skip_it = False
+
+            if self.pattern == "frame" or self.pattern == "phonetic":
+                LETTERS_IN_ALPHABET = 26
+                # Only draw cols at row alphabet ends, and vise versa
+                if (row % LETTERS_IN_ALPHABET == 0) or (col % LETTERS_IN_ALPHABET == 0):
+                    skip_it = False
+                else:
+                    skip_it = True
+
+            # draw the current row highlighter
+            base_rect = self.superblocks[self.selected_superblock]
+            within_selected_superblock = (
+                    row >= (base_rect.y / self.field_size)
+                    and row <= (base_rect.y / self.field_size + len(self.letters))
+                    and col >= (base_rect.x / self.field_size)
+                    and col <= (base_rect.x / self.field_size + len(self.letters))
+                )
+            if (
+                    within_selected_superblock
+                    and len(self.input_so_far) == 1
+                    and self.input_so_far.startswith(curr_row_letter)
+                ):
+                skip_it = False
+            return not skip_it
 
         def _make_centered_bg_rect(text_string, col, row, row_index=0):
             # this the measure text is the box around the text.
