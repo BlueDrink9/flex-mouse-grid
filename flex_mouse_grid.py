@@ -348,10 +348,6 @@ class FlexMouseGrid:
 
         def draw_superblock_bg(blockrect, num):
             superblock_size = len(self.letters) * self.field_size
-            # attempt to change backround color on the superblock chosen
-
-            # canvas.paint.color = colors[(row + col) % len(colors)] + hx(self.bg_transparency)
-
             # Background
             canvas.paint.color = get_fg_setting("superblock_background_color") + hx(self.bg_transparency)
             canvas.paint.style = Paint.Style.FILL
@@ -453,17 +449,24 @@ class FlexMouseGrid:
                 skip_it = False
             return not skip_it
 
-        def _make_centered_bg_rect(text_string, col, row, row_index=0):
+        def col_field_center(col):
+            return col * self.field_size + self.field_size / 2
+
+        def row_field_text_center(row, text_rect, row_letter_index=0):
+            # Row letter index is used to offset the row position of the
+            # text if it is was a multi-char string, eg for phonetic column
+            # labels.
+            return row * self.field_size + (self.field_size / 2 + text_rect.height / 2) * (row_letter_index + 1)
+
+        def _make_centered_bg_rect(text_string, col, row, row_letter_index=0):
             # this the measure text is the box around the text.
             canvas.paint.textsize = int(self.field_size * 3 / 5)
             # canvas.paint.textsize = int(field_size*4/5)
             text_rect = canvas.paint.measure_text(text_string)[1]
             background_rect = text_rect.copy()
             background_rect.center = Point2d(
-                col * self.field_size + self.field_size / 2,
-                row * self.field_size
-                + (self.field_size / 2 + text_rect.height / 2)
-                * (row_index + 1),
+                col_field_center(col),
+                row_field_text_center(row, text_rect, row_letter_index),
             )  # I think this re-centers the point?
             background_rect = background_rect.inset(-4)
             return background_rect, text_rect
@@ -475,14 +478,14 @@ class FlexMouseGrid:
             # gets a letter from the alphabet of the form 'ab' or 'DA'
             text_string = f"{letter}"
 
-            background_rect, _ = _make_centered_bg_rect(text_string, col, row, row_index=index)
+            background_rect, _ = _make_centered_bg_rect(text_string, col, row, row_letter_index=index)
 
             canvas.draw_rect(background_rect)
             canvas.paint.color = get_fg_setting("small_letters_color") + hx(self.label_transparency)
             # paint.style = Paint.Style.STROKE
             canvas.draw_text(
                 text_string,
-                col * self.field_size + (self.field_size / 2),
+                col_field_center(col),
                 row * self.field_size
                 + (self.field_size / 2 + text_rect.height / 2)
                 * (index + 1),
@@ -492,20 +495,21 @@ class FlexMouseGrid:
         def draw_letters(row, col):
             curr_row_letter = self.letters[row % len(self.letters)]
             curr_col_letter = self.letters[col % len(self.letters)]
+            user_letter_words = list(registry.lists['user.letter'][0].keys())
             # gets a letter from the alphabet of the form 'ab' or 'DA'
             text_string = f"{curr_row_letter}{curr_col_letter}"
             # remove distracting letters from frame mode frames.
             if self.pattern == "frame":
                 if curr_row_letter == "a":
-                    text_string = f"{curr_col_letter}"
+                    text_string = curr_col_letter
                 elif curr_col_letter == "a":
-                    text_string = f"{curr_row_letter}"
+                    text_string = curr_row_letter
             elif self.pattern == "phonetic":
                 if curr_row_letter == "a":
-                    text_string = f"{curr_col_letter}"
+                    text_string = curr_col_letter
                 elif curr_col_letter == "a":
                     # gets the phonetic words currently being used
-                    text_string = f"{list(registry.lists['user.letter'][0].keys())[row%len(self.letters)]}"
+                    text_string = user_letter_words[row % len(self.letters)]
             background_rect, text_rect = _make_centered_bg_rect(text_string, col, row)
 
             at_position = (
@@ -522,25 +526,23 @@ class FlexMouseGrid:
                 # paint.style = Paint.Style.STROKE
                 canvas.draw_text(
                     text_string,
-                    col * self.field_size + self.field_size / 2,
-                    row * self.field_size + self.field_size / 2 + text_rect.height / 2,
+                    col_field_center(col),
+                    row_field_text_center(row, text_rect, 0),
                 )
 
             # sees if the background should be highlighted
             else:
                 # draw columns of phonetic words
-                phonetic_word = list(registry.lists["user.letter"][0].keys())[
-                    col % len(self.letters)
-                ]
+                phonetic_word = user_letter_words[col % len(self.letters)]
                 letter_list = list(phonetic_word)
-                for index, letter in enumerate(letter_list):
-                    if index == 0:
+                for letter_index, letter_word in enumerate(letter_list):
+                    if letter_index == 0:
                         canvas.paint.color = get_fg_setting("row_highlighter") + hx(self.label_transparency)
-                        _draw_colored_text_box(background_rect, text_rect, text_string, letter, index, col, row)
+                        _draw_colored_text_box(background_rect, text_rect, text_string, letter_word, letter_index, col, row)
 
                     elif self.pattern == "phonetic":
                         canvas.paint.color = get_fg_setting("letters_background_color") + hx(self.label_transparency)
-                        self._draw_colored_text_box(background_rect, text_rect, text_string, letter, index, col, row)
+                        _draw_colored_text_box(background_rect, text_rect, text_string, letter_word, letter_index, col, row)
 
         def draw_rulers():
             for x_pos, align in [
