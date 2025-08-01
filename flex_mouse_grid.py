@@ -369,11 +369,6 @@ class FlexMouseGrid:
 
         def draw_superblock():
             superblock_size = len(self.letters) * self.field_size
-
-            # The current behavior is that each superblock has a different background color when it is active... pointless?
-            colors = ["000055", "665566", "554444", "888855", "aa55aa", "55cccc"] * 100
-            num = 1
-
             self.superblocks = []
 
             skipped_superblock = self.selected_superblock + 1
@@ -383,25 +378,17 @@ class FlexMouseGrid:
             if blocks_fitting_in_canvas_y == 0 and blocks_fitting_in_canvas_x == 0:
                 skipped_superblock = 1
 
+            block_num = 1
             # Draw backgrounds for all except the current block
             for row in range(0, blocks_fitting_in_canvas_y + 1):
                 for col in range(0, blocks_fitting_in_canvas_x + 1):
                     blockrect = self._make_blockrect(col, row, superblock_size)
-
-                    # # Set up different 'empty' background colors for each 'current' superblock... pointless?
-                    # canvas.paint.color = colors[(row + col) % len(colors)] + hx(
-                    #     self.bg_transparency
-                    # )
-                    # # canvas.paint.color = "ffffff"
-                    # canvas.paint.style = Paint.Style.FILL
-                    # canvas.draw_rect(blockrect)
-
-                    if skipped_superblock != num:
-                        draw_superblock_bg(blockrect, num)
+                    if skipped_superblock != block_num:
+                        draw_superblock_bg(blockrect, block_num)
                     self.superblocks.append(blockrect.copy())
-                    num += 1
+                    block_num += 1
 
-        def draw_superblock_bg(blockrect, num):
+        def draw_superblock_bg(blockrect, block_num):
             superblock_size = len(self.letters) * self.field_size
             # Background
             canvas.paint.color = get_fg_setting("superblock_background_color") + hx(
@@ -421,14 +408,14 @@ class FlexMouseGrid:
             # drawing the big number in the background
             canvas.paint.style = Paint.Style.FILL
             canvas.paint.textsize = int(superblock_size)
-            text_rect = canvas.paint.measure_text(str(num))[1]
+            text_rect = canvas.paint.measure_text(str(block_num))[1]
             # text_rect.center = blockrect.center
             text_rect.x = blockrect.x
             text_rect.y = blockrect.y
             canvas.paint.color = get_fg_setting("large_number_color") + hx(
                 self.bg_transparency
             )
-            canvas.draw_text(str(num), text_rect.x, text_rect.y + text_rect.height)
+            canvas.draw_text(str(block_num), text_rect.x, text_rect.y + text_rect.height)
 
         def draw_text():
             canvas.paint.text_align = canvas.paint.TextAlign.CENTER
